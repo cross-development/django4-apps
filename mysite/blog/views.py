@@ -4,6 +4,7 @@ from django.core.mail import send_mail
 from django.views.decorators.http import require_POST
 from django.db.models import Count
 from taggit.models import Tag
+
 from .forms import EmailPostForm, CommentForm
 from .models import Post
 
