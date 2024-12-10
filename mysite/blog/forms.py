@@ -17,3 +17,7 @@ class CommentForm(forms.ModelForm):
         widgets = {
             'body': forms.Textarea(attrs={'style': 'resize: none;'}),
         }
+
+
+class SearchForm(forms.Form):
+    query = forms.CharField()
