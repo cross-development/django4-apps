@@ -3,7 +3,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.mail import send_mail
 from django.views.decorators.http import require_POST
 from django.db.models import Count
-from django.contrib.postgres.search import SearchVector
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from taggit.models import Tag
 
 from .forms import EmailPostForm, CommentForm, SearchForm
@@ -49,8 +49,10 @@ def post_detail(request, year, month, day, post):
 
     # A list of the similar posts
     post_tags_ids = post.tags.values_list('id', flat=True)
-    similar_posts = Post.published.filter(tags__in=post_tags_ids).exclude(id=post.id)
-    similar_posts = similar_posts.annotate(same_tags=Count('tags')).order_by('-same_tags', '-publish')[:4]
+    similar_posts = Post.published.filter(
+        tags__in=post_tags_ids).exclude(id=post.id)
+    similar_posts = similar_posts.annotate(same_tags=Count(
+        'tags')).order_by('-same_tags', '-publish')[:4]
 
     return render(request, 'blog/post/detail.html',
                   {'post': post, 'form': form, 'comments': comments, 'similar_posts': similar_posts})
@@ -69,7 +71,8 @@ def post_share(request, post_id):
             cd = form.cleaned_data
             post_url = request.build_absolute_uri(post.get_absolute_url())
             subject = f"{cd['name']} recommends you read {post.title}"
-            message = f"Read {post.title} at {post_url}\n\n {cd['name']}\'s comments: {cd['comments']}"
+            message = f"Read {post.title} at {post_url}\n\n {
+                cd['name']}\'s comments: {cd['comments']}"
 
             send_mail(subject, message, '<EMAIL>', [cd['to']])
             sent = True
@@ -111,9 +114,12 @@ def post_search(request):
 
         if form.is_valid():
             query = form.cleaned_data['query']
-            resuls = Post.published.annotate(
-                search=SearchVector('title', 'body'),
-            ).filter(search=query)
+            search_vector = SearchVector('title', 'body')
+            search_query = SearchQuery(query)
+            results = Post.published.annotate(
+                search=search_vector,
+                rank=SearchRank(search_vector, search_query)
+            ).filter(search=search_query).order_by('-rank')
 
     return render(request, 'blog/post/search.html',
                   {'form': form, 'query': query, 'results': results})
