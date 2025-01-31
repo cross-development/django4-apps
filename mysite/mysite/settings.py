@@ -33,6 +33,7 @@ INSTALLED_APPS = [
 
     'blog.apps.BlogConfig',
     'account.apps.AccountConfig',
+    'images.apps.ImagesConfig',
 ]
 
 MIDDLEWARE = [
